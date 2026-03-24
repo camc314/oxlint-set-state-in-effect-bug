@@ -16,35 +16,35 @@ jobs:
       - run: node --version && npx oxlint --version && npx eslint --version
 
       - name: "1. set-state-in-render (expect: error)"
-        run: pnpm lint src/set-state-in-render.tsx  --format=default
+        run: pnpm lint src/set-state-in-render.tsx
         continue-on-error: true
 
       - name: "2. effect — no deps (expect: error)"
-        run: pnpm lint src/effect-no-deps.tsx  --format=default
+        run: pnpm lint src/effect-no-deps.tsx
         continue-on-error: true
 
       - name: "3. effect — empty deps [] (expect: error)"
-        run: pnpm lint src/effect-empty-deps.tsx  --format=default
+        run: pnpm lint src/effect-empty-deps.tsx
         continue-on-error: true
 
       - name: "4. effect — deps, simple setX(value) (expect: error)"
-        run: pnpm lint src/effect-with-deps-simple.tsx  --format=default
+        run: pnpm lint src/effect-with-deps-simple.tsx
         continue-on-error: true
 
       - name: "5. effect — deps, if/else branches (expect: error)"
-        run: pnpm lint src/effect-with-deps-conditional.tsx  --format=default
+        run: pnpm lint src/effect-with-deps-conditional.tsx
         continue-on-error: true
 
       - name: "6. effect — deps, if only (expect: error)"
-        run: pnpm lint src/effect-with-deps-if-only.tsx  --format=default
+        run: pnpm lint src/effect-with-deps-if-only.tsx
         continue-on-error: true
 
       - name: "7. effect — deps, multi-statement (expect: error)"
-        run: pnpm lint src/effect-with-deps-multi-statement.tsx  --format=default
+        run: pnpm lint src/effect-with-deps-multi-statement.tsx
         continue-on-error: true
 
       - name: "8. effect — deps, comment before setState (expect: error)"
-        run: pnpm lint src/effect-with-deps-comment.tsx  --format=default
+        run: pnpm lint src/effect-with-deps-comment.tsx
         continue-on-error: true
 
       - name: Summary
