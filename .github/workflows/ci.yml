@@ -16,52 +16,83 @@ jobs:
       - run: node --version && npx oxlint --version && npx eslint --version
 
       - name: "1. set-state-in-render (expect: error)"
-        run: pnpm lint:ci src/set-state-in-render.tsx
+        run: |
+          mkdir -p logs/oxlint
+          set +e
+          set -o pipefail
+          pnpm lint src/set-state-in-render.tsx 2>&1 | tee logs/oxlint/01-set-state-in-render.log
+          exit ${PIPESTATUS[0]}
         continue-on-error: true
 
       - name: "2. effect — no deps (expect: error)"
-        run: pnpm lint:ci src/effect-no-deps.tsx
+        run: |
+          mkdir -p logs/oxlint
+          set +e
+          set -o pipefail
+          pnpm lint src/effect-no-deps.tsx 2>&1 | tee logs/oxlint/02-effect-no-deps.log
+          exit ${PIPESTATUS[0]}
         continue-on-error: true
 
       - name: "3. effect — empty deps [] (expect: error)"
-        run: pnpm lint:ci src/effect-empty-deps.tsx
+        run: |
+          mkdir -p logs/oxlint
+          set +e
+          set -o pipefail
+          pnpm lint src/effect-empty-deps.tsx 2>&1 | tee logs/oxlint/03-effect-empty-deps.log
+          exit ${PIPESTATUS[0]}
         continue-on-error: true
 
       - name: "4. effect — deps, simple setX(value) (expect: error)"
-        run: pnpm lint:ci src/effect-with-deps-simple.tsx
+        run: |
+          mkdir -p logs/oxlint
+          set +e
+          set -o pipefail
+          pnpm lint src/effect-with-deps-simple.tsx 2>&1 | tee logs/oxlint/04-effect-with-deps-simple.log
+          exit ${PIPESTATUS[0]}
         continue-on-error: true
 
       - name: "5. effect — deps, if/else branches (expect: error)"
-        run: pnpm lint:ci src/effect-with-deps-conditional.tsx
+        run: |
+          mkdir -p logs/oxlint
+          set +e
+          set -o pipefail
+          pnpm lint src/effect-with-deps-conditional.tsx 2>&1 | tee logs/oxlint/05-effect-with-deps-conditional.log
+          exit ${PIPESTATUS[0]}
         continue-on-error: true
 
       - name: "6. effect — deps, if only (expect: error)"
-        run: pnpm lint:ci src/effect-with-deps-if-only.tsx
+        run: |
+          mkdir -p logs/oxlint
+          set +e
+          set -o pipefail
+          pnpm lint src/effect-with-deps-if-only.tsx 2>&1 | tee logs/oxlint/06-effect-with-deps-if-only.log
+          exit ${PIPESTATUS[0]}
         continue-on-error: true
 
       - name: "7. effect — deps, multi-statement (expect: error)"
-        run: pnpm lint:ci src/effect-with-deps-multi-statement.tsx
+        run: |
+          mkdir -p logs/oxlint
+          set +e
+          set -o pipefail
+          pnpm lint src/effect-with-deps-multi-statement.tsx 2>&1 | tee logs/oxlint/07-effect-with-deps-multi-statement.log
+          exit ${PIPESTATUS[0]}
         continue-on-error: true
 
       - name: "8. effect — deps, comment before setState (expect: error)"
-        run: pnpm lint:ci src/effect-with-deps-comment.tsx
+        run: |
+          mkdir -p logs/oxlint
+          set +e
+          set -o pipefail
+          pnpm lint src/effect-with-deps-comment.tsx 2>&1 | tee logs/oxlint/08-effect-with-deps-comment.log
+          exit ${PIPESTATUS[0]}
         continue-on-error: true
 
-      - name: "debug github formatter — printed case"
-        run: |
-          set +e
-          npx oxlint --format=github --type-aware --type-check src/effect-no-deps.tsx > /tmp/github-printed.log 2>&1
-          status=$?
-          echo "exit=$status bytes=$(wc -c < /tmp/github-printed.log) lines=$(wc -l < /tmp/github-printed.log)"
-          sed -n '1,80p' /tmp/github-printed.log
-
-      - name: "debug github formatter — missing case"
-        run: |
-          set +e
-          npx oxlint --format=github --type-aware --type-check src/effect-with-deps-conditional.tsx > /tmp/github-missing.log 2>&1
-          status=$?
-          echo "exit=$status bytes=$(wc -c < /tmp/github-missing.log) lines=$(wc -l < /tmp/github-missing.log)"
-          sed -n '1,80p' /tmp/github-missing.log
+      - name: Upload oxlint logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oxlint-logs
+          path: logs/oxlint
 
       - name: Summary
         run: echo "All steps should fail. Any step that passes is a missed violation."

@@ -4,7 +4,6 @@
   "type": "module",
   "scripts": {
     "lint": "oxlint --type-aware --type-check",
-    "lint:ci": "oxlint --format=unix --type-aware --type-check",
     "lint:eslint": "eslint"
   },
   "dependencies": {
