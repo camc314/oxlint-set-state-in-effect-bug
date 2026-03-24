@@ -47,6 +47,22 @@ jobs:
         run: pnpm lint:ci src/effect-with-deps-comment.tsx
         continue-on-error: true
 
+      - name: "debug github formatter — printed case"
+        run: |
+          set +e
+          npx oxlint --format=github --type-aware --type-check src/effect-no-deps.tsx > /tmp/github-printed.log 2>&1
+          status=$?
+          echo "exit=$status bytes=$(wc -c < /tmp/github-printed.log) lines=$(wc -l < /tmp/github-printed.log)"
+          sed -n '1,80p' /tmp/github-printed.log
+
+      - name: "debug github formatter — missing case"
+        run: |
+          set +e
+          npx oxlint --format=github --type-aware --type-check src/effect-with-deps-conditional.tsx > /tmp/github-missing.log 2>&1
+          status=$?
+          echo "exit=$status bytes=$(wc -c < /tmp/github-missing.log) lines=$(wc -l < /tmp/github-missing.log)"
+          sed -n '1,80p' /tmp/github-missing.log
+
       - name: Summary
         run: echo "All steps should fail. Any step that passes is a missed violation."
 
