@@ -13,7 +13,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install
-      - run: node --version && npx oxlint --version
+      - run: node --version && npx oxlint --version && npx eslint --version
 
       - name: "1. set-state-in-render (expect: error)"
         run: pnpm lint src/set-state-in-render.tsx  --format=default
@@ -49,3 +49,38 @@ jobs:
 
       - name: Summary
         run: echo "All steps should fail. Any step that passes is a missed violation."
+
+      - name: "9. eslint set-state-in-render (expect: error)"
+        run: pnpm lint:eslint src/set-state-in-render.tsx --format=stylish
+        continue-on-error: true
+
+      - name: "10. eslint effect — no deps (expect: error)"
+        run: pnpm lint:eslint src/effect-no-deps.tsx --format=stylish
+        continue-on-error: true
+
+      - name: "11. eslint effect — empty deps [] (expect: error)"
+        run: pnpm lint:eslint src/effect-empty-deps.tsx --format=stylish
+        continue-on-error: true
+
+      - name: "12. eslint effect — deps, simple setX(value) (expect: pass)"
+        run: pnpm lint:eslint src/effect-with-deps-simple.tsx --format=stylish
+        continue-on-error: true
+
+      - name: "13. eslint effect — deps, if/else branches (expect: error)"
+        run: pnpm lint:eslint src/effect-with-deps-conditional.tsx --format=stylish
+        continue-on-error: true
+
+      - name: "14. eslint effect — deps, if only (expect: error)"
+        run: pnpm lint:eslint src/effect-with-deps-if-only.tsx --format=stylish
+        continue-on-error: true
+
+      - name: "15. eslint effect — deps, multi-statement (expect: error)"
+        run: pnpm lint:eslint src/effect-with-deps-multi-statement.tsx --format=stylish
+        continue-on-error: true
+
+      - name: "16. eslint effect — deps, comment before setState (expect: pass)"
+        run: pnpm lint:eslint src/effect-with-deps-comment.tsx --format=stylish
+        continue-on-error: true
+
+      - name: ESLint Summary
+        run: echo "ESLint should fail for cases 9, 10, 11, 13, 14, and 15, and pass for cases 12 and 16."
