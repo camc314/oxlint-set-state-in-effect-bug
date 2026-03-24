@@ -1,0 +1,134 @@
+diff --git a/apps/oxlint/src/output_formatter/github.rs b/apps/oxlint/src/output_formatter/github.rs
+index 112c4a8ff..d5b767468 100644
+--- a/apps/oxlint/src/output_formatter/github.rs
++++ b/apps/oxlint/src/output_formatter/github.rs
+@@ -40,10 +40,21 @@ fn format_github(diagnostic: &Error) -> String {
+     let title = rule_id.map_or(Cow::Borrowed("oxlint"), Cow::Owned);
+     let filename = escape_property(&filename);
+     let message = escape_data(&message);
+-    format!(
++    let rendered = format!(
+         "::{severity} file={filename},line={},endLine={},col={},endColumn={},title={title}::{message}\n",
+         start.line, end.line, start.column, end.column
+-    )
++    );
++    if filename.is_empty() || message.is_empty() || start.line == 0 || start.column == 0 {
++        eprintln!(
++            "[oxlint github debug] degenerate github annotation severity={severity} title={title:?} file={filename:?} start={}:{} end={}:{} message_len={} rendered={rendered:?}",
++            start.line,
++            start.column,
++            end.line,
++            end.column,
++            message.len()
++        );
++    }
++    rendered
+ }
+ 
+ fn escape_data(value: &str) -> String {
+diff --git a/crates/oxc_diagnostics/src/reporter.rs b/crates/oxc_diagnostics/src/reporter.rs
+index 201a3f7b9..10aaf23c6 100644
+--- a/crates/oxc_diagnostics/src/reporter.rs
++++ b/crates/oxc_diagnostics/src/reporter.rs
+@@ -116,31 +116,83 @@ impl Info {
+         let mut severity = Severity::Warning;
+         let rule_id = diagnostic.code().map(|code| code.to_string());
+ 
+-        if let Some(mut labels) = diagnostic.labels()
+-            && let Some(source) = diagnostic.source_code()
+-            && let Some(label) = labels.next()
+-            && let Ok(span_content) = source.read_span(label.inner(), 0, 0)
+-        {
+-            start.line = span_content.line() + 1;
+-            start.column = span_content.column() + 1;
+-
+-            let end_offset = label.inner().offset() + label.inner().len();
+-
+-            if let Ok(span_content) = source.read_span(&SourceSpan::from((end_offset, 0)), 0, 0) {
++        let Some(mut labels) = diagnostic.labels() else {
++            eprintln!(
++                "[oxlint github debug] Info::new labels missing code={rule_id:?} severity={:?}",
++                diagnostic.severity()
++            );
++            return Self { start, end, filename, message, severity, rule_id };
++        };
++
++        let Some(source) = diagnostic.source_code() else {
++            eprintln!(
++                "[oxlint github debug] Info::new source missing code={rule_id:?} severity={:?}",
++                diagnostic.severity()
++            );
++            return Self { start, end, filename, message, severity, rule_id };
++        };
++
++        let Some(label) = labels.next() else {
++            eprintln!(
++                "[oxlint github debug] Info::new first label missing code={rule_id:?} severity={:?}",
++                diagnostic.severity()
++            );
++            return Self { start, end, filename, message, severity, rule_id };
++        };
++
++        let label_span = label.inner();
++        eprintln!(
++            "[oxlint github debug] Info::new first label code={rule_id:?} offset={} len={} severity={:?}",
++            label_span.offset(),
++            label_span.len(),
++            diagnostic.severity()
++        );
++
++        let Ok(span_content) = source.read_span(label_span, 0, 0) else {
++            eprintln!(
++                "[oxlint github debug] Info::new start read_span failed code={rule_id:?} offset={} len={}",
++                label_span.offset(),
++                label_span.len()
++            );
++            return Self { start, end, filename, message, severity, rule_id };
++        };
++
++        start.line = span_content.line() + 1;
++        start.column = span_content.column() + 1;
++
++        let end_offset = label_span.offset() + label_span.len();
++        match source.read_span(&SourceSpan::from((end_offset, 0)), 0, 0) {
++            Ok(span_content) => {
+                 end.line = span_content.line() + 1;
+                 end.column = span_content.column() + 1;
+             }
+-
+-            if let Some(name) = span_content.name() {
+-                filename = name.to_string();
+-            }
+-            if matches!(diagnostic.severity(), Some(Severity::Error)) {
+-                severity = Severity::Error;
++            Err(_) => {
++                eprintln!(
++                    "[oxlint github debug] Info::new end read_span failed code={rule_id:?} end_offset={end_offset}"
++                );
+             }
++        }
++
++        if let Some(name) = span_content.name() {
++            filename = name.to_string();
++        } else {
++            eprintln!("[oxlint github debug] Info::new filename missing code={rule_id:?}");
++        }
+ 
+-            message = diagnostic.to_string();
++        if matches!(diagnostic.severity(), Some(Severity::Error)) {
++            severity = Severity::Error;
+         }
+ 
++        message = diagnostic.to_string();
++        eprintln!(
++            "[oxlint github debug] Info::new success code={rule_id:?} file={filename:?} start={}:{} end={}:{} message_len={}",
++            start.line,
++            start.column,
++            end.line,
++            end.column,
++            message.len()
++        );
++
+         Self { start, end, filename, message, severity, rule_id }
+     }
+ }

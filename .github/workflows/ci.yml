@@ -3,8 +3,12 @@ on: push
 jobs:
   lint:
     runs-on: ubuntu-latest
+    env:
+      OXLINT_CLI: vendor/oxc/apps/oxlint/dist/cli.js
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: pnpm/action-setup@v4
         with:
           version: 9
@@ -12,15 +16,24 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.94.0
       - run: pnpm install
-      - run: node --version && npx oxlint --version && npx eslint --version
+      - name: Apply local oxc patches
+        run: git -C vendor/oxc apply ../../patches/oxc-github-debug.patch
+      - name: Build patched oxlint
+        run: |
+          npx pnpm@10.30.2 install --dir vendor/oxc --frozen-lockfile
+          npx pnpm@10.30.2 --dir vendor/oxc/apps/oxlint run build-dev
+      - run: node --version && node "$OXLINT_CLI" --version && npx eslint --version
 
       - name: "1. set-state-in-render (expect: error)"
         run: |
           mkdir -p logs/oxlint
           set +e
           set -o pipefail
-          pnpm lint src/set-state-in-render.tsx 2>&1 | tee logs/oxlint/01-set-state-in-render.log
+          node "$OXLINT_CLI" --type-aware --type-check src/set-state-in-render.tsx 2>&1 | tee logs/oxlint/01-set-state-in-render.log
           exit ${PIPESTATUS[0]}
         continue-on-error: true
 
@@ -29,7 +42,7 @@ jobs:
           mkdir -p logs/oxlint
           set +e
           set -o pipefail
-          pnpm lint src/effect-no-deps.tsx 2>&1 | tee logs/oxlint/02-effect-no-deps.log
+          node "$OXLINT_CLI" --type-aware --type-check src/effect-no-deps.tsx 2>&1 | tee logs/oxlint/02-effect-no-deps.log
           exit ${PIPESTATUS[0]}
         continue-on-error: true
 
@@ -38,7 +51,7 @@ jobs:
           mkdir -p logs/oxlint
           set +e
           set -o pipefail
-          pnpm lint src/effect-empty-deps.tsx 2>&1 | tee logs/oxlint/03-effect-empty-deps.log
+          node "$OXLINT_CLI" --type-aware --type-check src/effect-empty-deps.tsx 2>&1 | tee logs/oxlint/03-effect-empty-deps.log
           exit ${PIPESTATUS[0]}
         continue-on-error: true
 
@@ -47,7 +60,7 @@ jobs:
           mkdir -p logs/oxlint
           set +e
           set -o pipefail
-          pnpm lint src/effect-with-deps-simple.tsx 2>&1 | tee logs/oxlint/04-effect-with-deps-simple.log
+          node "$OXLINT_CLI" --type-aware --type-check src/effect-with-deps-simple.tsx 2>&1 | tee logs/oxlint/04-effect-with-deps-simple.log
           exit ${PIPESTATUS[0]}
         continue-on-error: true
 
@@ -56,7 +69,7 @@ jobs:
           mkdir -p logs/oxlint
           set +e
           set -o pipefail
-          pnpm lint src/effect-with-deps-conditional.tsx 2>&1 | tee logs/oxlint/05-effect-with-deps-conditional.log
+          node "$OXLINT_CLI" --type-aware --type-check src/effect-with-deps-conditional.tsx 2>&1 | tee logs/oxlint/05-effect-with-deps-conditional.log
           exit ${PIPESTATUS[0]}
         continue-on-error: true
 
@@ -65,7 +78,7 @@ jobs:
           mkdir -p logs/oxlint
           set +e
           set -o pipefail
-          pnpm lint src/effect-with-deps-if-only.tsx 2>&1 | tee logs/oxlint/06-effect-with-deps-if-only.log
+          node "$OXLINT_CLI" --type-aware --type-check src/effect-with-deps-if-only.tsx 2>&1 | tee logs/oxlint/06-effect-with-deps-if-only.log
           exit ${PIPESTATUS[0]}
         continue-on-error: true
 
@@ -74,7 +87,7 @@ jobs:
           mkdir -p logs/oxlint
           set +e
           set -o pipefail
-          pnpm lint src/effect-with-deps-multi-statement.tsx 2>&1 | tee logs/oxlint/07-effect-with-deps-multi-statement.log
+          node "$OXLINT_CLI" --type-aware --type-check src/effect-with-deps-multi-statement.tsx 2>&1 | tee logs/oxlint/07-effect-with-deps-multi-statement.log
           exit ${PIPESTATUS[0]}
         continue-on-error: true
 
@@ -83,7 +96,7 @@ jobs:
           mkdir -p logs/oxlint
           set +e
           set -o pipefail
-          pnpm lint src/effect-with-deps-comment.tsx 2>&1 | tee logs/oxlint/08-effect-with-deps-comment.log
+          node "$OXLINT_CLI" --type-aware --type-check src/effect-with-deps-comment.tsx 2>&1 | tee logs/oxlint/08-effect-with-deps-comment.log
           exit ${PIPESTATUS[0]}
         continue-on-error: true
 
