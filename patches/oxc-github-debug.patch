@@ -132,3 +132,22 @@ index 201a3f7b9..10aaf23c6 100644
          Self { start, end, filename, message, severity, rule_id }
      }
  }
+diff --git a/crates/oxc_diagnostics/src/service.rs b/crates/oxc_diagnostics/src/service.rs
+index c30886139..3d56c7ae2 100644
+--- a/crates/oxc_diagnostics/src/service.rs
++++ b/crates/oxc_diagnostics/src/service.rs
+@@ -187,7 +187,13 @@ impl DiagnosticService {
+                 if let Some(err_str) = self.reporter.render_error(diagnostic) {
+                     // Skip large output and print only once.
+                     // Setting to 1200 because graphical output may contain ansi escape codes and other decorations.
+-                    if err_str.lines().any(|line| line.len() >= 1200) {
++                    let max_line_len = err_str.lines().map(str::len).max().unwrap_or(0);
++                    if max_line_len >= 1200 {
++                        let first_line = err_str.lines().next().unwrap_or_default();
++                        eprintln!(
++                            "[oxlint github debug] minified fallback triggered max_line_len={max_line_len} path={path:?} first_line_prefix={:?}",
++                            &first_line[..first_line.len().min(200)]
++                        );
+                         let mut diagnostic =
+                             OxcDiagnostic::warn("File is too long to fit on the screen");
+                         if let Some(path) = path {
