@@ -47,6 +47,28 @@ jobs:
         run: pnpm lint src/effect-with-deps-comment.tsx
         continue-on-error: true
 
+      - name: "debug A. capture printed oxlint case to file"
+        run: |
+          set +e
+          pnpm lint src/effect-no-deps.tsx > /tmp/oxlint-no-deps.log 2>&1
+          status=$?
+          echo "exit=$status bytes=$(wc -c < /tmp/oxlint-no-deps.log) lines=$(wc -l < /tmp/oxlint-no-deps.log)"
+          sed -n '1,200p' /tmp/oxlint-no-deps.log
+
+      - name: "debug B. capture missing oxlint case to file"
+        run: |
+          set +e
+          pnpm lint src/effect-with-deps-conditional.tsx > /tmp/oxlint-conditional.log 2>&1
+          status=$?
+          echo "exit=$status bytes=$(wc -c < /tmp/oxlint-conditional.log) lines=$(wc -l < /tmp/oxlint-conditional.log)"
+          sed -n '1,200p' /tmp/oxlint-conditional.log
+
+      - name: "debug C. missing oxlint case with unix formatter"
+        run: |
+          set +e
+          npx oxlint --format=unix --type-aware --type-check src/effect-with-deps-conditional.tsx
+          echo "exit=$?"
+
       - name: Summary
         run: echo "All steps should fail. Any step that passes is a missed violation."
 
